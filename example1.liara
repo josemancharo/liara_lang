@@ -1,7 +1,77 @@
-(val x 1)
+; example.liara
+
+(val x 1)                                           ; top level statements are evaluated
 (val y 2)
 (+ x y)
-    (* @ 2)
+    (* @ 2)                                         ; @ peeks the stack
     (+ @ 3)
     (- 0 @)
 (print @) ; prints -9
+
+
+(mod name_of_module
+
+    (print "Your mom")                              ; this is dead code since top level statements in modules are not evaluated
+
+    (fn name_of_function (x int) y (do              ; optional type annotation for parameters
+                                                    ; function body
+        (+ x y)                                     ; returns last item in function body
+                                                    ; type is automatically detected
+    ) (returns int))                                ; return type can optionally be specified
+
+    (fn some_simple_logic (do
+        (val is_true false)
+        (branch is_true
+            1                                       ; on true
+            (+ 1 2)                                 ; on false
+        )
+    )                                               ; optional `(returns int)` omitted
+    )
+
+    (fn do_loop (do
+        (for (0 10) (do                                   ; not sure how to engineer loop with purely immutable values?
+            (print @)                                            ; possibly using tail recursion, but that would be more complex
+        ))                                          ; maybe just set number of times to loop or loop forever unless condition is met.
+    )                                               ; However, the variable representing the condition must be immutable,
+                                                    ; so maybe a loop can take a single parameter such as (loop (val s) (do ... )) or a range like (for x 0..10 (do ... ))
+
+    (struct MyStruct
+        (field my_field int)                                ; required field is an integer
+        (field my_other_field (option float) (some 1.0))    ; optional field set with default value of some(1.0)
+    )
+)
+
+(name_of_module::some_simple_logic)                 ; returns a pointer to the function
+(name_of_module::some_simple_logic ())              ; calls the function
+    (use name_of_module **)                             ; import all elements from module into script
+
+(MyStruct
+    (my_field 10)
+    (my_other_field (some 2.0))
+)                                                   ; construction
+(val my_variable @)                                 ; store instance in variable
+(print my_variable)                                 ; print instance of MyStruct
+
+
+(fn main (do
+    (val my_pointer (weak my_variable))                 ; create weak reference to MyStruct
+    (print my_pointer)                                  ; print "some(MyStruct(my_field=10, my_other_field=some(2.0)))"
+                                                        ; notice that reading from weak pointers return an option by default
+    (val y (deref my_pointer))                          ; deref copies the value of the pointer into a new value
+    (# y (my_field 11))                                 ; copies y but with my_field equal to 11. It does not create a new pointer, rather it creates a new stack-allocated option type of the value of the weak pointer
+    (print @.my_field)                                  ; prints some(11) (@ peeks the stack)
+    (print y.my_field)                                  ; prints some(10)
+    (print my_variable.my_field)                        ; prints some(10)
+    (val z (ref my_variable))                           ; set z to a strong reference to my_variable
+    (print z)                                           ; prints value of my_variable (not using some() or none types, since it is strong reference)
+
+    (guard y
+        (print @)                                       ; on some, prints the value of y (not encapsulated in option)
+        (print "no value")                              ; on none, prints an arbitrary string
+    )
+))
+
+(print my_pointer)                                      ; will throw semantic error since my_pointer is out of scope
+
+(main ())                                               ; function `print` returns `none`, so main also returns `none`
+

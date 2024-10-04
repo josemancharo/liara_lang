@@ -1,5 +1,6 @@
 use crate::parsing::parser::parse;
 mod parsing;
+mod semantic_evaluation;
 
 fn main() {
     let input = "
