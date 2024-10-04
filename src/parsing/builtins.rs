@@ -1,7 +1,7 @@
 use crate::parsing::builtins::Builtin::*;
 use bincode::{Decode, Encode};
 
-#[derive(Debug, Clone, Decode, Encode)]
+#[derive(Debug, Clone, Decode, Encode, PartialEq)]
 pub enum Builtin {
     Val,
     Fn,
@@ -31,7 +31,7 @@ pub enum Builtin {
     StringFrom,
     SomeOf,
     NoneOf,
-    BranchOnSome,
+    Guard,
     Nop,
     Import,
     PeekStack,
@@ -70,7 +70,7 @@ pub fn evaluate_builtin(name: &String) -> Option<Builtin>
         "some_of" => Some(SomeOf),
         "none" => Some(NoneOf),
         "branch" => Some(Branch),
-        "guard" => Some(BranchOnSome),
+        "guard" => Some(Guard),
         "_" => Some(Nop),
         "~" => Some(BitInv),
         "fn" => Some(Fn),

@@ -5,3 +5,18 @@ edition = "2021"
 
 [dependencies]
 bincode = "2.0.0-rc.3"
+clap = { version = "4.5.19", features = ["derive"] }
+snailquote = "0.3.1"
+
+[[bin]]
+name = "lia"
+path = "src/lia.rs"
+
+[[bin]]
+name = "liarac"
+path = "src/liarac.rs"
+
+[lib]
+name = "liara"
+path = "src/lib.rs"
+crate-type = ["cdylib", "lib"]

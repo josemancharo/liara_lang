@@ -24,16 +24,11 @@ pub fn tokenize(input: String) -> Result<Vec<String>, String> {
                 while let Some(&c) = chars.peek() {
                     match c {
                         '\\' => {
+                            string_literal.push('\\');
                             chars.next();
                             if let Some(escaped_char) = chars.next() {
                                 match escaped_char {
-                                    'n' => string_literal.push('\n'),
-                                    't' => string_literal.push('\t'),
-                                    '"' => string_literal.push('"'),
-                                    '\\' => string_literal.push('\\'),
-                                    '\'' => string_literal.push('\''),
-                                    'r' => string_literal.push('\r'),
-                                    '0' => string_literal.push('\0'),
+                                    'n' | 't' | '"' | '\\' | '\'' | 'r' | '0' => string_literal.push(escaped_char),
                                     other => {
                                         return Err(format!("Unknown escape sequence: \\{}", other));
                                     }
@@ -61,16 +56,10 @@ pub fn tokenize(input: String) -> Result<Vec<String>, String> {
 
                 if let Some(&c) = chars.peek() {
                     if c == '\\' {
-                        escaped = true;
                         chars.next();
                         if let Some(escaped_char) = chars.next() {
                             match escaped_char {
-                                'n' => char_literal.push('\n'),
-                                't' => char_literal.push('\t'),
-                                '\\' => char_literal.push('\\'),
-                                '\'' => char_literal.push('\''),
-                                'r' => char_literal.push('\r'),
-                                '0' => char_literal.push('\0'),
+                                'n' | 't' | '"' | '\\' | '\'' | 'r' | '0' => char_literal.push(escaped_char),
                                 other => {
                                     return Err(format!("Unknown escape sequence: \\{}", other));
                                 }
@@ -100,7 +89,12 @@ pub fn tokenize(input: String) -> Result<Vec<String>, String> {
                     return Err(format!("Invalid char literal: '{}'", char_literal));
                 }
 
-                tokens.push(format!("'{}'", char_literal));
+                if escaped {
+                    tokens.push(format!("'\\{}'", char_literal));
+                }
+                else {
+                    tokens.push(format!("'{}'", char_literal));
+                }
             }
             c if c.is_whitespace() => {
                 chars.next();
@@ -124,4 +118,31 @@ pub fn tokenize(input: String) -> Result<Vec<String>, String> {
     Ok(tokens)
 }
 
+#[cfg(test)]
+mod tests {
+    use crate::parsing::tokenizer::tokenize;
 
+    #[test]
+    fn test_tokenize() {
+        let tokens = tokenize("(* 3 5)".to_string());
+        assert!(tokens.is_ok());
+        assert_eq!(tokens.unwrap(), vec!["(", "*", "3", "5", ")"]);
+    }
+
+    #[test]
+    fn test_char() {
+        let tokens = tokenize("(print 'b')".to_string());
+        assert!(tokens.is_ok());
+        assert_eq!(tokens.unwrap(), vec!["(", "print", "'b'", ")"]);
+        let tokens = tokenize("(print '\\'')".to_string());
+        assert!(tokens.is_ok());
+        assert_eq!(tokens.unwrap(), vec!["(", "print", "'\''", ")"]);
+    }
+
+    #[test]
+    fn test_str() {
+        let tokens = tokenize("(print \"\\\"Hello\\n World\\\"\")".to_string());
+        assert!(tokens.is_ok());
+        assert_eq!(tokens.unwrap(), vec!["(", "print", "\"\\\"Hello\\n World\\\"\"", ")"]);
+    }
+}
